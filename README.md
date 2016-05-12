@@ -30,7 +30,7 @@ import PackageDescription
 
 let package = Package(
     name: "MyPackage",
-    dependencies: [.Package(url: "https://github.com/aciidb0mb3r/Spawn", majorVersion: 0, minorVersion: 1)]
+    dependencies: [.Package(url: "https://github.com/aciidb0mb3r/Spawn", majorVersion: 0, minor: 1)]
 )
 ```
 
