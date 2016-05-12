@@ -1,4 +1,8 @@
+#if os(OSX)
 import Darwin.C
+#else
+import Glibc
+#endif
 
 public enum SpawnError: ErrorProtocol {
     case CouldNotOpenPipe
@@ -20,11 +24,19 @@ public final class Spawn {
     private(set) var pid: pid_t = 0
 
     /// The TID of the thread which will read streams.
+    #if os(OSX)
     private(set) var tid: pthread_t? = nil
+    #else
+    private(set) var tid = pthread_t()
+    #endif
 
     private let process = "/bin/sh"
     private var outputPipe: [Int32] = [-1, -1]
+    #if os(OSX)
     private var childFDActions: posix_spawn_file_actions_t? = nil
+    #else
+    private var childFDActions = posix_spawn_file_actions_t()
+    #endif
 
     public init(args: [String], output: OutputClosure? = nil) throws {
         self.args = args 
