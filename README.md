@@ -2,7 +2,7 @@
 
 * Note: Works on OSX and Linux.
  
-Spawn runs new processes using `posix_spawn` and reads output (and stderr stream) on a different thread so the calling thread is never blocked.
+* Spawn runs new processes using `posix_spawn` and reads output (and stderr stream) on a different thread so the calling thread is never blocked.
 
 # How to use?
 
@@ -22,8 +22,8 @@ do {
 
 # How to install?
 
-## swift package manager:
-Add dependency in Package.swift
+### Swift Package Manager:
+* Add dependency in `Package.swift`
 
 ```swift
 import PackageDescription
