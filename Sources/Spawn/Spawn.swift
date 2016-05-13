@@ -26,21 +26,18 @@ public final class Spawn {
     /// The TID of the thread which will read streams.
     #if os(OSX)
     private(set) var tid: pthread_t? = nil
+    private var childFDActions: posix_spawn_file_actions_t? = nil
     #else
     private(set) var tid = pthread_t()
+    private var childFDActions = posix_spawn_file_actions_t()
     #endif
 
     private let process = "/bin/sh"
     private var outputPipe: [Int32] = [-1, -1]
-    #if os(OSX)
-    private var childFDActions: posix_spawn_file_actions_t? = nil
-    #else
-    private var childFDActions = posix_spawn_file_actions_t()
-    #endif
 
     public init(args: [String], output: OutputClosure? = nil) throws {
-        self.args = args 
-        self.output = output
+        (self.args, self.output)  = (args, output)
+
         if pipe(&outputPipe) < 0 {
             throw SpawnError.CouldNotOpenPipe
         }
