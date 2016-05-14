@@ -47,8 +47,10 @@ public final class Spawn {
         posix_spawn_file_actions_adddup2(&childFDActions, outputPipe[1], 2)
         posix_spawn_file_actions_addclose(&childFDActions, outputPipe[0])
         posix_spawn_file_actions_addclose(&childFDActions, outputPipe[1])
+
         let argv: [UnsafeMutablePointer<CChar>?] = args.map{ $0.withCString(strdup) }
         defer { for case let arg? in argv { free(arg) } }
+
         if posix_spawn(&pid, argv[0], &childFDActions, nil, argv + [nil], nil) < 0 {
             throw SpawnError.CouldNotSpawn
         }
