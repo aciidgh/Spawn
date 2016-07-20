@@ -90,7 +90,11 @@ public final class Spawn {
 
     deinit {
         var status: Int32 = 0
-        pthread_join(tid, nil)
+
+        if let tid = tid {
+            pthread_join(tid, nil)
+        }
+
         waitpid(pid, &status, 0)
     }
 }
