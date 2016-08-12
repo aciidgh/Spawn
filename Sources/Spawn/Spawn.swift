@@ -4,7 +4,7 @@ import Darwin.C
 import Glibc
 #endif
 
-public enum SpawnError: ErrorProtocol {
+public enum SpawnError: Error {
     case CouldNotOpenPipe
     case CouldNotSpawn
 }
@@ -64,25 +64,24 @@ public final class Spawn {
     var threadInfo: ThreadInfo!
 
     func watchStreams() {
-        func callback(x: UnsafeMutablePointer<Void>?) -> UnsafeMutablePointer<Void>? {
-            guard let x = x else { return nil }
-            let threadInfo = UnsafeMutablePointer<ThreadInfo>(x).pointee
+        func callback(x: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
+            let threadInfo = unsafeBitCast(x, to: UnsafeMutablePointer<ThreadInfo>.self).pointee
             let outputPipe = threadInfo.outputPipe
             close(outputPipe[1])
             let bufferSize: size_t = 1024 * 8
-            var dynamicBuffer: UnsafeMutablePointer<UInt8>? = nil
-            dynamicBuffer = UnsafeMutablePointer<UInt8>(malloc(bufferSize))
+            let dynamicBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
             while true {
-                let amtRead = read(outputPipe[0], dynamicBuffer!, bufferSize)
+                let amtRead = read(outputPipe[0], dynamicBuffer, bufferSize)
                 if amtRead <= 0 { break }
-                let arrary = Array(UnsafeBufferPointer(start: dynamicBuffer, count: amtRead))
-                let tmp = arrary  + [UInt8(0)]
+                let array = Array(UnsafeBufferPointer(start: dynamicBuffer, count: amtRead))
+                let tmp = array  + [UInt8(0)]
                 tmp.withUnsafeBufferPointer { ptr in
                     let str = String(cString: unsafeBitCast(ptr.baseAddress, to: UnsafePointer<CChar>.self))
                     threadInfo.output?(str)
                 }
             }
-           return nil
+            dynamicBuffer.deallocate(capacity: bufferSize)
+            return nil
         }
         threadInfo = ThreadInfo(outputPipe: &outputPipe, output: output)
         pthread_create(&tid, nil, callback, &threadInfo)

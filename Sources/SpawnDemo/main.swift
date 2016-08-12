@@ -1,7 +1,7 @@
 import Spawn
 
 do {
-    let spawn = try Spawn(args: ["/bin/sh", "-c", "ls", "."]) { str in 
+    let spawn = try Spawn(args: ["/bin/sh", "-c", "ls", "."]) { str in
         print(str)
     }
 } catch {
