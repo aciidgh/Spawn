@@ -64,6 +64,7 @@ public final class Spawn {
     var threadInfo: ThreadInfo!
 
     func watchStreams() {
+        #if(OSX)
         func callback(x: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
             let threadInfo = unsafeBitCast(x, to: UnsafeMutablePointer<ThreadInfo>.self).pointee
             let outputPipe = threadInfo.outputPipe
@@ -83,6 +84,28 @@ public final class Spawn {
             dynamicBuffer.deallocate(capacity: bufferSize)
             return nil
         }
+        #else
+        func callback(x: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+            let threadInfo = unsafeBitCast(x!, to: UnsafeMutablePointer<ThreadInfo>.self).pointee
+            let outputPipe = threadInfo.outputPipe
+            close(outputPipe[1])
+            let bufferSize: size_t = 1024 * 8
+            let dynamicBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            while true {
+                let amtRead = read(outputPipe[0], dynamicBuffer, bufferSize)
+                if amtRead <= 0 { break }
+                let array = Array(UnsafeBufferPointer(start: dynamicBuffer, count: amtRead))
+                let tmp = array  + [UInt8(0)]
+                tmp.withUnsafeBufferPointer { ptr in
+                    let str = String(cString: unsafeBitCast(ptr.baseAddress, to: UnsafePointer<CChar>.self))
+                    threadInfo.output?(str)
+                }
+            }
+            dynamicBuffer.deallocate(capacity: bufferSize)
+            return nil
+        }
+        #endif
+
         threadInfo = ThreadInfo(outputPipe: &outputPipe, output: output)
         pthread_create(&tid, nil, callback, &threadInfo)
     }
@@ -90,9 +113,13 @@ public final class Spawn {
     deinit {
         var status: Int32 = 0
 
+        #if(OSX)
         if let tid = tid {
             pthread_join(tid, nil)
         }
+        #else
+        pthread_join(tid, nil)
+        #endif
 
         waitpid(pid, &status, 0)
     }
